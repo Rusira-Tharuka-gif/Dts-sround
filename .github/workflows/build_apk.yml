@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build 5.1 Surround Sound App
 
 on:
   push:
@@ -19,6 +19,90 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
+
+    - name: Generate Minimal Android Project
+      run: |
+        mkdir -p app/src/main/java/com/example/surroundapp
+        mkdir -p app/src/main/res/layout
+
+        # Root build.gradle
+        cat << 'EOF' > build.gradle
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.1.1' }
+        }
+        allprojects {
+            repositories { google(); mavenCentral() }
+        }
+        EOF
+
+        # settings.gradle
+        cat << 'EOF' > settings.gradle
+        include ':app'
+        EOF
+
+        # gradle.properties
+        cat << 'EOF' > gradle.properties
+        android.useAndroidX=true
+        EOF
+
+        # app/build.gradle
+        cat << 'EOF' > app/build.gradle
+        apply plugin: 'com.android.application'
+
+        android {
+            namespace 'com.example.surroundapp'
+            compileSdk 33
+
+            defaultConfig {
+                applicationId "com.example.surroundapp"
+                minSdk 24
+                targetSdk 33
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        EOF
+
+        # AndroidManifest.xml
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+                android:label="5.1 Surround Upmixer"
+                android:theme="@android:style/Theme.Material.Light.NoActionBar">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # MainActivity.java
+        cat << 'EOF' > app/src/main/java/com/example/surroundapp/MainActivity.java
+        package com.example.surroundapp;
+        import android.os.Bundle;
+        import android.widget.TextView;
+        import android.view.Gravity;
+        import androidx.appcompat.app.AppCompatActivity;
+
+        public class MainActivity extends AppCompatActivity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                TextView tv = new TextView(this);
+                tv.setText("5.1 Surround Sound DSP Engine Active");
+                tv.setGravity(Gravity.CENTER);
+                tv.setTextSize(20);
+                setContentView(tv);
+            }
+        }
+        EOF
+
+        # Setup Gradle Wrapper
+        gradle wrapper
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
